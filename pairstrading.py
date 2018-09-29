@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from dateutil.relativedelta import relativedelta
+from itertools import combinations
 
 ## Global Constants
 # Look back window in days
@@ -35,4 +36,18 @@ def get_X_prev_day_trading_day(date, days_):
     date_2 = date_ - relativedelta(date_, days=days_)
     np.busday_offset(date_2, -1)
     return date_2
+
+def set_start_trading_day(START_DATE_OF_TRADING):
+    start_date_of_trading_temp = get_X_prev_day_trading_day(START_DATE_OF_TRADING, 0)
+    if get_X_prev_day_trading_day(start_date_of_trading_temp, LOOK_BACK_DAYS) > START_DATE_OF_DATA:
+        return start_date_of_trading_temp
+    else:
+        raise ValueError('Please enter a START_DATE - LOOK_BACK_DAYS that is after the start DATA date')
+
+def get_Pairs(DATA_FRAME,START_DATE_OF_TRADING):
+    start_day_lookback = get_X_prev_trading_day(START_DATE_OF_TRADING,LOOK_BACK_DAYS)
+    end_day_lookback = get_X_prev_day_trading_day(START_DATE_OF_TRADING,1) ##TODO SPECIFY HOW TO DO THIS
+    lookback_dataframe = DATA_FRAME( start_day_lookback, end_day_lookback)
+    pairs_list = list( combinations(lookback_dataframe[0],2))
+
 
