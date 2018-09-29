@@ -16,4 +16,4 @@ def get_prev_day_trading(date_, days_):
     return date_2
 
 
-#Santiago
+# Santiago 
