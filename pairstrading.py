@@ -87,3 +87,5 @@ def get_Pairs(STOCK_DATA,START_DATE_OF_TRADING):
 
     pairs_list = list( combinations(list(lookback_dataframe.columns.values)[1:],2))
 pass
+
+get_x_prev_trading_day(dt.date(2018, 9, 28), 252)
