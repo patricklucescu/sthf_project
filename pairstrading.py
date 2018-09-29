@@ -22,7 +22,7 @@ END_DATE_OF_DATA = dt.date(2001, 1, 1)
 START_DATE_OF_TRADING = dt.date(2000, 1, 1)
 END_DATE_OF_TRADING = dt.date(2001, 1, 1)
 # Import data
-STOCK_DATA = pd.read_csv("random_stock_data.csv", sep = ";", parse_dates=[''])
+STOCK_DATA = pd.read_csv("random_stock_data.csv", sep = ",")#, parse_dates=['Date'])
 
 sys.exit()
 
