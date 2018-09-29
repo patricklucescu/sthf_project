@@ -7,6 +7,7 @@ Created on 29 Sep 2018
 import datetime as dt
 import numpy as np
 import pandas as pd
+import sys
 
 from dateutil.relativedelta import relativedelta
 from itertools import combinations
@@ -15,11 +16,15 @@ from itertools import combinations
 # Look back window in days
 LOOK_BACK_DAYS = 21
 # Dates regarding data
-START_DATE_OF_DATA = dt.date(2000, 01, 01)
-END_DATE_OF_DATA = dt.date(2001, 01, 01)
+START_DATE_OF_DATA = dt.date(2000, 1, 1)
+END_DATE_OF_DATA = dt.date(2001, 1, 1)
 # Dates regarding trading
-START_DATE_OF_TRADING = dt.date(2000, 01, 01)
-END_DATE_OF_TRADING = dt.date(2001, 01, 01)
+START_DATE_OF_TRADING = dt.date(2000, 1, 1)
+END_DATE_OF_TRADING = dt.date(2001, 1, 1)
+# Import data
+stock_data = pd.read_csv("random_stock_data.csv", sep = ";")
+
+sys.exit()
 
 def set_end_trading_day(START_DATE_OF_TRADING, END_DATE_OF_TRADING):
     if START_DATE_OF_TRADING < END_DATE_OF_TRADING:
