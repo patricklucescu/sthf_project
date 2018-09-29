@@ -14,3 +14,6 @@ def get_prev_day_trading(date_, days_):
     date_2 = date_ - relativedelta(date_, days=days_)
     np.busday_offset(date_2, -1)
     return date_2
+
+
+#Santiago
