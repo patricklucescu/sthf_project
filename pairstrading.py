@@ -22,7 +22,7 @@ END_DATE_OF_DATA = dt.date(2001, 1, 1)
 START_DATE_OF_TRADING = dt.date(2000, 1, 1)
 END_DATE_OF_TRADING = dt.date(2001, 1, 1)
 # Import data
-stock_data = pd.read_csv("random_stock_data.csv", sep = ";")
+STOCK_DATA = pd.read_csv("random_stock_data.csv", sep = ";", parse_dates=[''])
 
 sys.exit()
 
@@ -49,10 +49,18 @@ def set_start_trading_day(START_DATE_OF_TRADING):
     else:
         raise ValueError('Please enter a START_DATE - LOOK_BACK_DAYS that is after the start DATA date')
 
-def get_Pairs(DATA_FRAME,START_DATE_OF_TRADING):
+def get_Pairs(STOCK_DATA,START_DATE_OF_TRADING):
     start_day_lookback = get_X_prev_trading_day(START_DATE_OF_TRADING,LOOK_BACK_DAYS)
     end_day_lookback = get_X_prev_day_trading_day(START_DATE_OF_TRADING,1) ##TODO SPECIFY HOW TO DO THIS
-    lookback_dataframe = DATA_FRAME( start_day_lookback, end_day_lookback)
-    pairs_list = list( combinations(lookback_dataframe[0],2))
+
+    start_day_lookback = dt.date(2000, 1, 1)
+    end_day_lookback = dt.date(2001, 1, 1)
+
+    temp = STOCK_DATA
+    temp.set_index(temp)
+
+    lookback_dataframe = STOCK_DATA( start_day_lookback, end_day_lookback)
+
+    pairs_list = list( combinations(list(lookback_dataframe.columns.values)[1:],2))
 
 
