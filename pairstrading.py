@@ -14,4 +14,6 @@ def get_start_lookback(date_, days_):
     days_ = 30
     date_2 = date_ - relativedelta(date_, days=days_)
     np.busday_offset(date_2, -1)
-    
+    return date_2
+
+# Santiago 
