@@ -20,72 +20,75 @@ LOOK_BACK_DAYS = 21
 START_DATE_OF_DATA = dt.date(2000, 1, 1)
 END_DATE_OF_DATA = dt.date(2001, 1, 1)
 # Dates regarding trading
-START_DATE_OF_TRADING = dt.date(2000, 1, 1)
+START_DATE_OF_TRADING = dt.date(2000, 1, 1) # MUST BE A TRADING DAY IN THE DATA
 END_DATE_OF_TRADING = dt.date(2001, 1, 1)
 # Import data
-STOCK_DATA = pd.read_csv("random_stock_data.csv", sep = ",")#, parse_dates=['Date'])
+STOCK_DATA = pd.read_csv("random_stock_data.csv", sep = ",", index_col=['Date'], parse_dates=['Date'])
 # Define NYSE holiday
 NYSE_HOLIDAYS = get_nyse_holidays(1996, 2018)
+# Number of stock pairs
+NUM_STOCK_PAIRS = 10
+# Number of days that we hold stocks
+NUM_HOLD_DAYS = 60
 
-sys.exit()
+#sys.exit()
 
 def get_x_prev_trading_day(date_, trad_days_):
-    out_date = np.busday_offset(date_, -252, holidays = NYSE_HOLIDAYS)
+    out_date = np.busday_offset(date_, - trad_days_, holidays = NYSE_HOLIDAYS)
     return out_date.astype(dt.date)
 pass
 
-# def get_nyse_holidays(year_start_, year_end_):
-#     a = dt.date(year_start_, 1, 1)
-#     b = dt.date(year_end_, 12, 31)
-#     rs = rrule.rruleset()
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=31, byweekday=rrule.FR)) # New Years Day  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 1, bymonthday= 1))                     # New Years Day  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 1, bymonthday= 2, byweekday=rrule.MO)) # New Years Day    
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 1, byweekday= rrule.MO(3)))            # Martin Luther King Day   
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 2, byweekday= rrule.MO(3)))            # Washington's Birthday
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, byeaster= -2))                                  # Good Friday
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 5, byweekday= rrule.MO(-1)))           # Memorial Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 7, bymonthday= 3, byweekday=rrule.FR)) # Independence Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 7, bymonthday= 4))                     # Independence Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 7, bymonthday= 5, byweekday=rrule.MO)) # Independence Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 9, byweekday= rrule.MO(1)))            # Labor Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=11, byweekday= rrule.TH(4)))            # Thanksgiving Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=24, byweekday=rrule.FR)) # Christmas  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=25))                     # Christmas  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=26, byweekday=rrule.MO)) # Christmas 
-#     # Exclude potential holidays that fall on weekends
-#     rs.exrule(rrule.rrule(rrule.WEEKLY, dtstart=a, until=b, byweekday=(rrule.SA,rrule.SU)))
-#     return list(rs)
-# pass
+# Assert this:
+# end_date_of_trading_: start_date_of_trading_ < end_date_of_trading_
+# start_date_of_trading_: get_X_prev_day_trading_day(start_date_of_trading_temp, LOOK_BACK_DAYS) > START_DATE_OF_DATA
 
-def set_end_trading_day(START_DATE_OF_TRADING, END_DATE_OF_TRADING):
-    if START_DATE_OF_TRADING < END_DATE_OF_TRADING:
-        raise ValueError('Please enter a end trading date that is after the start trading date')
-    else:
-        return get_X_prev_day_trading_day(END_DATE_OF_TRADING, 0)
-pass
 
-def set_start_trading_day(START_DATE_OF_TRADING):
-    start_date_of_trading_temp = get_X_prev_day_trading_day(START_DATE_OF_TRADING, 0)
-    if get_X_prev_day_trading_day(start_date_of_trading_temp, LOOK_BACK_DAYS) > START_DATE_OF_DATA:
-        return start_date_of_trading_temp
-    else:
-        raise ValueError('Please enter a START_DATE - LOOK_BACK_DAYS that is after the start DATA date')
-pass
 
-def get_Pairs(STOCK_DATA,START_DATE_OF_TRADING):
-    start_day_lookback = get_X_prev_trading_day(START_DATE_OF_TRADING,LOOK_BACK_DAYS)
-    end_day_lookback = get_X_prev_day_trading_day(START_DATE_OF_TRADING,1) ##TODO SPECIFY HOW TO DO THIS
 
-    start_day_lookback = dt.date(2000, 1, 1)
-    end_day_lookback = dt.date(2001, 1, 1)
+def get_Pairs(stock_data_, start_date_of_trading_):
 
-    temp = STOCK_DATA
-    temp.set_index(temp)
+    start_day_lookback = get_X_prev_trading_day(start_date_of_trading, LOOK_BACK_DAYS)
+    assert start_day_lookback > START_DATE_OF_DATA, 'Error 1 - Define a later day of start tarding - not in database'
 
-    lookback_dataframe = STOCK_DATA( start_day_lookback, end_day_lookback)
+    end_day_lookback = get_X_prev_day_trading_day(start_date_of_trading, 1)
+
+    lookback_dataframe = stock_data_[start_day_lookback:end_day_lookback]
+
+    lookback_dataframe = (lookback_dataframe / lookback_dataframe.iloc[0]) * 100
 
     pairs_list = list( combinations(list(lookback_dataframe.columns.values)[1:],2))
+    std_pairs=[]
+    for pair in pairs_list:
+        stock_A = lookback_dataframe[pair[0]]
+        stock_B = lookback_dataframe[pair[1]]
+        delta_A_B = stock_A - stock_B
+        std_delta_A_B = np.std(delta_A_B)
+        triple = (std_delta_A_B, pair[0], pair[1])
+        std_pairs.append(triple)
+
+    sorted_std_pairs = sorted(std_pairs, key=lambda x: float(x[0]))
+    chosen_stock_pairs = sorted_std_pairs[0:NUM_STOCK_PAIRS-1]
+    # chosen_stock_pairs = [x[1:] for x in chosen_stock_pairs] #remove std fromt triple, become tuple
+
+    return sorted_std_pairs
 pass
+
+
+# Analyze and trade
+def roll_over_time(stock_data_, start_date_of_trading_, end_date_of_trading_, num_hold_days_):
+
+    assert start_date_of_trading_ < end_date_of_trading_, "Error 2 - Trading start day before end day"
+
+
+    #start_date_of_trading_ = START_DATE_OF_TRADING
+    #end_date_of_trading_ = END_DATE_OF_TRADING
+
+    list_of_dates = list(stock_data_.index)
+
+    # iterate over alle dates and trade and analyze
+
+
+
+
 
 get_x_prev_trading_day(dt.date(2018, 9, 28), 252)
