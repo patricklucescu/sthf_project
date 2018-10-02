@@ -3,15 +3,98 @@ Created on 29 Sep 2018
 
 @author: S.Walliser, P.Lucescu, F.Ferrari
 '''
+
 import datetime as dt
 import numpy as np
 import pandas as pd
-import sys
 
-from dateutil.relativedelta import relativedelta
 from itertools import combinations
 from nyse_holidays import get_nyse_holidays
-from dateutil import rrule 
+
+def read_df_from_db(field_):
+#     field_ = "PX_LAST"
+    df = pd.read_csv(dir_path + field_ + ext, parse_dates=['Dates'])
+    return df
+pass
+
+def read_industry_groups():
+    sector_df = pd.read_csv(dir_path + 'SECTOR' + ext)
+    return sector_df
+pass
+
+def get_tickers_list_by_ind_group(ind_group_):
+#     ind_group_ = "Electronics"
+    sector_df = read_industry_groups()
+    idx = sector_df.iloc[1,:] == ind_group_
+    tickers_list = sector_df.columns.values[idx].tolist()
+    return tickers_list
+pass
+
+def get_df_from_to(df_, date_from_, date_to_, ind_group_ = None):
+#     date_from_ = dt.date(2010, 1, 1)
+#     date_to_ = dt.date(2010, 1, 15)
+#     ind_group_ = "Electronics"
+    idx_start = df_.index[df_['Dates'] == date_from_]
+    idx_end = df_.index[df_['Dates'] == date_to_]
+    if ind_group_ == None:
+        sel_df = df_.loc[idx_start[0]:idx_end[0]]
+    else:
+        tickers_list = get_tickers_list_by_ind_group(ind_group_)
+        sel_df = df_.loc[idx_start[0]:idx_end[0]][['Dates'] + tickers_list]
+    sel_df = sel_df.dropna(axis=1)
+    return sel_df
+pass
+
+def get_normalized_df(df_):
+    norm_df = df_.copy()
+    norm_df.iloc[:,1:] = norm_df.iloc[:,1:]/norm_df.iloc[0,1:]
+    return norm_df
+pass
+    
+def get_x_trading_day(date_, trad_days_):
+    out_date = np.busday_offset(date_, trad_days_, holidays = NYSE_HOLIDAYS)
+    return out_date.astype(dt.date)
+pass
+
+def get_pairs_list(date_from_, date_to_, ind_group_):
+#     date_from_ = dt.date(2010, 1, 1)
+#     date_to_ = dt.date(2010, 1, 15)
+#     ind_group_ = "Electronics"
+    df_ = get_df_from_to(totret_df, date_from_, date_to_, ind_group_)
+    norm_df_ = get_normalized_df(df_)
+    pairs_list = list(combinations(list(norm_df_.columns.values)[1:],2))
+    return pairs_list
+pass
+
+
+
+
+
+
+
+
+dir_path = '/Users/francescoferrari/Desktop/'
+ext = '.csv'
+close_df = read_df_from_db('PX_LAST')
+totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Global Constants
 # Look back window in days
@@ -25,67 +108,25 @@ END_DATE_OF_TRADING = dt.date(2001, 1, 1)
 # Import data
 STOCK_DATA = pd.read_csv("random_stock_data.csv", sep = ",")#, parse_dates=['Date'])
 # Define NYSE holiday
-NYSE_HOLIDAYS = get_nyse_holidays(1996, 2018)
-
-sys.exit()
-
-def get_x_prev_trading_day(date_, trad_days_):
-    out_date = np.busday_offset(date_, -252, holidays = NYSE_HOLIDAYS)
-    return out_date.astype(dt.date)
-pass
-
-# def get_nyse_holidays(year_start_, year_end_):
-#     a = dt.date(year_start_, 1, 1)
-#     b = dt.date(year_end_, 12, 31)
-#     rs = rrule.rruleset()
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=31, byweekday=rrule.FR)) # New Years Day  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 1, bymonthday= 1))                     # New Years Day  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 1, bymonthday= 2, byweekday=rrule.MO)) # New Years Day    
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 1, byweekday= rrule.MO(3)))            # Martin Luther King Day   
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 2, byweekday= rrule.MO(3)))            # Washington's Birthday
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, byeaster= -2))                                  # Good Friday
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 5, byweekday= rrule.MO(-1)))           # Memorial Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 7, bymonthday= 3, byweekday=rrule.FR)) # Independence Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 7, bymonthday= 4))                     # Independence Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 7, bymonthday= 5, byweekday=rrule.MO)) # Independence Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth= 9, byweekday= rrule.MO(1)))            # Labor Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=11, byweekday= rrule.TH(4)))            # Thanksgiving Day
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=24, byweekday=rrule.FR)) # Christmas  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=25))                     # Christmas  
-#     rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, bymonth=12, bymonthday=26, byweekday=rrule.MO)) # Christmas 
-#     # Exclude potential holidays that fall on weekends
-#     rs.exrule(rrule.rrule(rrule.WEEKLY, dtstart=a, until=b, byweekday=(rrule.SA,rrule.SU)))
-#     return list(rs)
-# pass
+NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
 
 def set_end_trading_day(START_DATE_OF_TRADING, END_DATE_OF_TRADING):
     if START_DATE_OF_TRADING < END_DATE_OF_TRADING:
         raise ValueError('Please enter a end trading date that is after the start trading date')
     else:
-        return get_X_prev_day_trading_day(END_DATE_OF_TRADING, 0)
+        return get_x_trading_day(END_DATE_OF_TRADING, 0)
 pass
 
 def set_start_trading_day(START_DATE_OF_TRADING):
-    start_date_of_trading_temp = get_X_prev_day_trading_day(START_DATE_OF_TRADING, 0)
-    if get_X_prev_day_trading_day(start_date_of_trading_temp, LOOK_BACK_DAYS) > START_DATE_OF_DATA:
+    start_date_of_trading_temp = get_x_trading_day(START_DATE_OF_TRADING, 0)
+    if get_x_trading_day(start_date_of_trading_temp, -LOOK_BACK_DAYS) > START_DATE_OF_DATA:
         return start_date_of_trading_temp
     else:
         raise ValueError('Please enter a START_DATE - LOOK_BACK_DAYS that is after the start DATA date')
 pass
 
-def get_Pairs(STOCK_DATA,START_DATE_OF_TRADING):
-    start_day_lookback = get_X_prev_trading_day(START_DATE_OF_TRADING,LOOK_BACK_DAYS)
-    end_day_lookback = get_X_prev_day_trading_day(START_DATE_OF_TRADING,1) ##TODO SPECIFY HOW TO DO THIS
+print(get_x_trading_day(dt.date(2018, 9, 28), -1))
 
-    start_day_lookback = dt.date(2000, 1, 1)
-    end_day_lookback = dt.date(2001, 1, 1)
 
-    temp = STOCK_DATA
-    temp.set_index(temp)
 
-    lookback_dataframe = STOCK_DATA( start_day_lookback, end_day_lookback)
 
-    pairs_list = list( combinations(list(lookback_dataframe.columns.values)[1:],2))
-pass
-
-get_x_prev_trading_day(dt.date(2018, 9, 28), 252)
