@@ -14,12 +14,12 @@ from nyse_holidays import get_nyse_holidays
 
 def read_df_from_db(field_):
 #     field_ = "PX_LAST"
-    df = pd.read_csv(dir_path + field_ + ext, parse_dates=['Dates'])
+    df = pd.read_csv(DIR_PATH + field_ + EXT, parse_dates=['Dates'])
     return df
 pass
 
 def read_industry_info():
-    sector_df = pd.read_csv(dir_path + 'SECTOR' + ext)
+    sector_df = pd.read_csv(DIR_PATH + 'SECTOR' + EXT)
     return sector_df
 pass
 
@@ -76,11 +76,11 @@ def get_pair_selection_criterium(df_pair_1, df_pair_2_):
     return criterium
 pass
 
-def get_pairs_ind_gr_sec(date_from_, date_to_, ind_gr_sec_):
+def get_pairs_ind_gr_sec(df_, date_from_, date_to_, ind_gr_sec_):
 #     date_from_ = dt.date(2010, 1, 1)
 #     date_to_ = dt.date(2010, 1, 15)
 #     ind_gr_sec_ = "Electronics"
-    df_ = get_df_from_to(totret_df, date_from_, date_to_, ind_gr_sec_)
+    df_ = get_df_from_to(df_, date_from_, date_to_, ind_gr_sec_)
     norm_df_ = get_normalized_df(df_)
     pairs_list = list(combinations(list(norm_df_.columns.values)[1:],2))
     for i, pair in enumerate(pairs_list):
@@ -90,12 +90,12 @@ def get_pairs_ind_gr_sec(date_from_, date_to_, ind_gr_sec_):
     return pairs_list
 pass
 
-def get_re_est_schedule(date_from_, est_per_days_, trad_per_days_):
+def get_re_est_schedule(df_, date_from_, est_per_days_, trad_per_days_):
 #     est_per_days_ = 21 * 12
 #     trad_per_days_ = 21 * 6
 #     date_from_ = dt.date(2011, 2, 1)
-    first_date_data = totret_df.iloc[0,0].to_pydatetime().date()
-    end_date_data = totret_df.iloc[-1,0].to_pydatetime().date()
+    first_date_data = df_.iloc[0,0].to_pydatetime().date()
+    end_date_data = df_.iloc[-1,0].to_pydatetime().date()
     assert get_x_trading_day(date_from_, -est_per_days_) >= first_date_data
     date = date_from_
     re_est_dates_end = [date_from_]
@@ -107,24 +107,24 @@ def get_re_est_schedule(date_from_, est_per_days_, trad_per_days_):
     return re_est_dates_start, re_est_dates_end
 pass
 
-def get_selected_pairs(date_from_, date_to_, no_pairs_):
-    date_from_ = dt.date(2010, 1, 4)
-    date_to_ = get_x_trading_day(date_from_, 252)
-    no_pairs_ = 2
+def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
+#     date_from_ = dt.date(2010, 1, 4)
+#     date_to_ = get_x_trading_day(date_from_, 252)
+#     no_pairs_ = 2
     sectors = get_industry_sector()
     pairs_list = []
     for sector in sectors:
-        pairs_list += get_pairs_ind_gr_sec(date_from_, date_to_, sector)
+        pairs_list += get_pairs_ind_gr_sec(df_, date_from_, date_to_, sector)
     pairs_list_sorted = sorted(pairs_list, key = lambda x: x[2])
     pairs_selected = pairs_list_sorted[0:no_pairs_]
     return pairs_selected
 pass
 
-def get_postions_pair(date_from_, date_to_, pair_):
+def get_postions_pair(df_, date_from_, date_to_, pair_):
 #     date_from_ = get_x_trading_day(dt.date(2010, 1, 4), 252 + 1)
 #     date_to_ = get_x_trading_day(date_from_, 126)
 #     pair_ = ('ED US Equity', 'XEL US Equity', 1.348713804343775)
-    pair_df = get_df_from_to(totret_df, date_from_, date_to_,
+    pair_df = get_df_from_to(df_, date_from_, date_to_,
                              tickers_list_ = list(pair_[0:2]))
     norm_pair_df = get_normalized_df(pair_df)
     norm_pair_df['diff'] = norm_pair_df.iloc[:,1] - norm_pair_df.iloc[:,2]
@@ -146,69 +146,51 @@ def get_postions_pair(date_from_, date_to_, pair_):
     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[0]]/100)
     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]]/100)
     plt.plot(norm_pair_df['Dates'], norm_pair_df['trade_open'])
-    return norm_pair_df['Dates', col_pos_names[0], col_pos_names[1], 'RF Pos']
+    return norm_pair_df[['Dates', col_pos_names[0], col_pos_names[1], 'RF Pos']]
 pass
 
-
-
-
-A, B = get_re_est_schedule(dt.date(2011, 2, 1), 252, 126)
-
-dir_path = '/Users/francescoferrari/Desktop/'
-ext = '.csv'
-close_df = read_df_from_db('PX_LAST')
-totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
-df_ = totret_df
-NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Global Constants
-# Look back window in days
-LOOK_BACK_DAYS = 21
-# Dates regarding data
-START_DATE_OF_DATA = dt.date(2000, 1, 1)
-END_DATE_OF_DATA = dt.date(2001, 1, 1)
-# Dates regarding trading
-START_DATE_OF_TRADING = dt.date(2000, 1, 1)
-END_DATE_OF_TRADING = dt.date(2001, 1, 1)
-# Import data
-STOCK_DATA = pd.read_csv("random_stock_data.csv", sep = ",")#, parse_dates=['Date'])
-# Define NYSE holiday
-
-
-def set_end_trading_day(START_DATE_OF_TRADING, END_DATE_OF_TRADING):
-    if START_DATE_OF_TRADING < END_DATE_OF_TRADING:
-        raise ValueError('Please enter a end trading date that is after the start trading date')
-    else:
-        return get_x_trading_day(END_DATE_OF_TRADING, 0)
+def merge_positions_df(tot_pos_df_, pair_pos_df_):
+    tot_pos_df = tot_pos_df_.copy()
+    col_tot_pos_df = tot_pos_df.columns.values[1:]
+    col_pair_pos_df = pair_pos_df_.columns.values[1:]
+    for col_pair_pos in col_pair_pos_df:
+        if col_pair_pos in col_tot_pos_df:
+            tot_pos_df[col_pair_pos] += pair_pos_df_[col_pair_pos]
+        else:
+            tot_pos_df[col_pair_pos] = pair_pos_df_[col_pair_pos]
+    return tot_pos_df
 pass
 
-def set_start_trading_day(START_DATE_OF_TRADING):
-    start_date_of_trading_temp = get_x_trading_day(START_DATE_OF_TRADING, 0)
-    if get_x_trading_day(start_date_of_trading_temp, -LOOK_BACK_DAYS) > START_DATE_OF_DATA:
-        return start_date_of_trading_temp
-    else:
-        raise ValueError('Please enter a START_DATE - LOOK_BACK_DAYS that is after the start DATA date')
+def get_df_tot_positions(df_, trad_date_from_, trad_date_to_, no_pairs_):
+#     trad_date_from_ = dt.date(2011, 2, 1)
+#     trad_date_to_ = get_x_trading_day(trad_date_from_, 126)
+#     no_pairs_ = 50
+    est_date_from = get_x_trading_day(trad_date_from_, -(252+1))
+    est_date_to = get_x_trading_day(trad_date_from_, -1)
+    pairs_selected = get_selected_pairs(df_, est_date_from, est_date_to, no_pairs_)
+    tot_pos_df = get_postions_pair(df_,
+                                   trad_date_from_,
+                                   trad_date_to_,
+                                   pairs_selected[0])
+    for sel_pair in pairs_selected[1:]:
+        pair_pos_df = get_postions_pair(df_,
+                                        trad_date_from_,
+                                        trad_date_to_,
+                                        sel_pair)
+        tot_pos_df = merge_positions_df(tot_pos_df, pair_pos_df)
+    return tot_pos_df
 pass
 
-print(get_x_trading_day(dt.date(2018, 9, 28), -1))
-
-
-
-
+if '__main__':
+    # Global Variable
+    DIR_PATH = '/Users/francescoferrari/Desktop/'
+    EXT = '.csv'
+    NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
+    # Reading data
+    close_df = read_df_from_db('PX_LAST')
+    totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
+    # Testing function `get_df_tot_positions`
+    trad_date_from = dt.date(2011, 2, 1)
+    trad_date_to = get_x_trading_day(trad_date_from, 126)
+    no_pairs = 50
+    get_df_tot_positions(totret_df, trad_date_from, trad_date_to, no_pairs)
