@@ -75,9 +75,37 @@ pass
 
 
 # Analyze and trade
-def roll_over_time(stock_data_, start_date_of_trading_, end_date_of_trading_, num_hold_days_):
+def simulate_trading(stock_data_, start_date_of_trading_, end_date_of_trading_, num_hold_days_):
 
     assert start_date_of_trading_ < end_date_of_trading_, "Error 2 - Trading start day before end day"
+
+    # TODO: create an empty return matrix, where returns of each period are save - just append it after each hwile loop iteration
+
+    start_date_of_trading_ITERATOR = start_date_of_trading_
+    while (start_date_of_trading_ITERATOR + num_hold_days_) < end_date_of_trading_: # TODO: <= or = ?!
+
+
+        # TODO: define start dta etarding and end_dta eo ftrading 8(= start + hold period)
+
+        # Call get_trade_positions function
+        WHAT = get_trade_positions_of_pairs(X, Y, Z) # sorted_std_pairs_, start_date_period_, end_date_period_
+
+        # Calculate returns
+        RETURNS = calculate_returns_from_trade_positions_of_pairs()
+
+        # Update start_date_of_trading_ITERATOR
+        start_date_of_trading_ITERATOR = start_date_of_trading_ITERATOR + num_hold_days_
+
+        # TODO:
+
+
+
+pass
+
+def get_trade_positions(sorted_std_pairs_, start_date_period_, end_date_period_):
+
+
+
 
 
     #start_date_of_trading_ = START_DATE_OF_TRADING
@@ -87,8 +115,15 @@ def roll_over_time(stock_data_, start_date_of_trading_, end_date_of_trading_, nu
 
     # iterate over alle dates and trade and analyze
 
+pass
 
 
+
+def calculate_returns_from_trade_positions_of_pairs: # input ... and calculate returns
+    pass
+
+def calculate_statistics:
+    pass
 
 
 get_x_prev_trading_day(dt.date(2018, 9, 28), 252)
