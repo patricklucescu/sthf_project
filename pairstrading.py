@@ -199,16 +199,15 @@ def get_df_tot_positions(df_,
     return tot_pos_df
 pass
 
-if '__main__':
-    # Global Variable
-    DIR_PATH = '/Users/francescoferrari/Desktop/'
-    EXT = '.csv'
-    NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
-    # Reading data
-    close_df = read_df_from_db('PX_LAST')
-    totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
-    # Testing function `get_df_tot_positions`
-    trad_date_from = dt.date(2011, 2, 1)
-    trad_date_to = get_x_trading_day(trad_date_from, 126)
-    no_pairs = 50
-    get_df_tot_positions(totret_df, trad_date_from, trad_date_to, 252, no_pairs)
+# Global Variable
+DIR_PATH = '/Users/francescoferrari/Desktop/'
+EXT = '.csv'
+NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
+# Reading data
+close_df = read_df_from_db('PX_LAST')
+totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
+# Testing function `get_df_tot_positions`
+trad_date_from = dt.date(2011, 2, 1)
+trad_date_to = get_x_trading_day(trad_date_from, 126)
+no_pairs = 50
+get_df_tot_positions(totret_df, trad_date_from, trad_date_to, 252, no_pairs)
