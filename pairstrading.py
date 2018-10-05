@@ -145,7 +145,7 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
         if norm_pair_df.iloc[i, 4]:
             norm_pair_df.iloc[i:, 5] = True
         if np.sign(norm_pair_df.iloc[i-1, 3]) != np.sign(norm_pair_df.iloc[i, 3]):
-            norm_pair_df.iloc[i+1:, 5] = False
+            norm_pair_df.iloc[i:, 5] = False
     col_pos_names = [ticker + ' Pos' for ticker in pair_[0:2]]
     norm_pair_df[col_pos_names[0]] = np.sign(norm_pair_df['diff']) * -1 * norm_pair_df['trade_open']
     norm_pair_df[col_pos_names[1]] = np.sign(norm_pair_df['diff']) * norm_pair_df['trade_open']
@@ -154,7 +154,9 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
     # Plot for analysis
     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[0]]/100)
     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]]/100)
-    plt.plot(norm_pair_df['Dates'], norm_pair_df['trade_open'])
+    plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[0]])
+    plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[1]])
+    print('next')
     return norm_pair_df[['Dates', col_pos_names[0], col_pos_names[1], 'RF Pos']]
 pass
 
