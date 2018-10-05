@@ -90,21 +90,30 @@ def get_pairs_ind_gr_sec(df_, date_from_, date_to_, ind_gr_sec_):
     return pairs_list
 pass
 
-def get_re_est_schedule(df_, date_from_, est_per_days_, trad_per_days_):
+def get_trad_schedule(df_,
+                      trad_date_from_,
+                      trad_date_to_,
+                      est_per_days_,
+                      trad_per_days_):
 #     est_per_days_ = 21 * 12
 #     trad_per_days_ = 21 * 6
-#     date_from_ = dt.date(2011, 2, 1)
+#     trad_date_from_ = dt.date(2011, 2, 1)
+#     trad_date_to_ = dt.date(2018, 2, 1)
     first_date_data = df_.iloc[0,0].to_pydatetime().date()
     end_date_data = df_.iloc[-1,0].to_pydatetime().date()
-    assert get_x_trading_day(date_from_, -est_per_days_) >= first_date_data
-    date = date_from_
-    re_est_dates_end = [date_from_]
-    re_est_dates_start = [get_x_trading_day(date_from_, -est_per_days_)]
-    while date <= get_x_trading_day(end_date_data, -trad_per_days_):
-        re_est_dates_end += [get_x_trading_day(date, trad_per_days_)]
-        date = re_est_dates_end[-1]
-        re_est_dates_start += [get_x_trading_day(date, -est_per_days_)]
-    return re_est_dates_start, re_est_dates_end
+    assert trad_date_to_ <= end_date_data
+    assert get_x_trading_day(trad_date_from_, -(est_per_days_+1)) >= first_date_data
+    date = trad_date_from_
+    trad_dates_start = [date]
+    trad_dates_end = [get_x_trading_day(date, trad_per_days_)]
+    while date <= trad_date_to_:
+        trad_dates_start += [get_x_trading_day(date, trad_per_days_)]
+        date = trad_dates_end[-1]
+        if get_x_trading_day(date, trad_per_days_) >= end_date_data:
+            trad_dates_end += [trad_date_to_]
+        else:
+            trad_dates_end += [get_x_trading_day(date, trad_per_days_)]
+    return 
 pass
 
 def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
@@ -161,13 +170,22 @@ def merge_positions_df(tot_pos_df_, pair_pos_df_):
     return tot_pos_df
 pass
 
-def get_df_tot_positions(df_, trad_date_from_, trad_date_to_, no_pairs_):
+def get_df_tot_positions(df_, 
+                         trad_date_from_, 
+                         trad_date_to_,
+                         est_per_trad_days_,
+                         no_pairs_):
 #     trad_date_from_ = dt.date(2011, 2, 1)
 #     trad_date_to_ = get_x_trading_day(trad_date_from_, 126)
+#     est_per_trad_days_ = 252
 #     no_pairs_ = 50
-    est_date_from = get_x_trading_day(trad_date_from_, -(252+1))
+    est_date_from = get_x_trading_day(trad_date_from_,
+                                      -(est_per_trad_days_+1))
     est_date_to = get_x_trading_day(trad_date_from_, -1)
-    pairs_selected = get_selected_pairs(df_, est_date_from, est_date_to, no_pairs_)
+    pairs_selected = get_selected_pairs(df_, 
+                                        est_date_from, 
+                                        est_date_to, 
+                                        no_pairs_)
     tot_pos_df = get_postions_pair(df_,
                                    trad_date_from_,
                                    trad_date_to_,
@@ -193,4 +211,4 @@ if '__main__':
     trad_date_from = dt.date(2011, 2, 1)
     trad_date_to = get_x_trading_day(trad_date_from, 126)
     no_pairs = 50
-    get_df_tot_positions(totret_df, trad_date_from, trad_date_to, no_pairs)
+    get_df_tot_positions(totret_df, trad_date_from, trad_date_to, 252, no_pairs)
