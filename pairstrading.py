@@ -104,16 +104,17 @@ def get_trad_schedule(df_,
     assert trad_date_to_ <= end_date_data
     assert get_x_trading_day(trad_date_from_, -(est_per_days_+1)) >= first_date_data
     date = trad_date_from_
-    trad_dates_start = [date]
-    trad_dates_end = [get_x_trading_day(date, trad_per_days_)]
+    trad_dates = [tuple((date,
+                         get_x_trading_day(date, trad_per_days_)))]
     while date <= trad_date_to_:
-        trad_dates_start += [get_x_trading_day(date, trad_per_days_)]
-        date = trad_dates_end[-1]
+        trad_date_start = get_x_trading_day(date, trad_per_days_)
+        date = trad_dates[-1][1]
         if get_x_trading_day(date, trad_per_days_) >= end_date_data:
-            trad_dates_end += [trad_date_to_]
+            trad_date_end = trad_date_to_
         else:
-            trad_dates_end += [get_x_trading_day(date, trad_per_days_)]
-    return 
+            trad_date_end = get_x_trading_day(date, trad_per_days_)
+        trad_dates.append(tuple((trad_date_start, trad_date_end)))
+    return trad_dates
 pass
 
 def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
@@ -139,13 +140,14 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
     norm_pair_df['diff'] = norm_pair_df.iloc[:,1] - norm_pair_df.iloc[:,2]
     norm_pair_df['abs_diff_le_std'] = np.abs(norm_pair_df.iloc[:,3]) >= 2 * pair_[2]
     norm_pair_df['trade_open'] = np.zeros(norm_pair_df.shape[0], dtype=bool)
-    for i in range(norm_pair_df.shape[0] - 1):
+    for i in range(norm_pair_df.shape[0]-1):
         if i == 0:
             continue
         if norm_pair_df.iloc[i, 4]:
-            norm_pair_df.iloc[i:, 5] = True
+            norm_pair_df.iloc[i+1:, 5] = True
         if np.sign(norm_pair_df.iloc[i-1, 3]) != np.sign(norm_pair_df.iloc[i, 3]):
-            norm_pair_df.iloc[i:, 5] = False
+            norm_pair_df.iloc[i+1:, 5] = False
+            norm_pair_df.iloc[i,3] *= -1
     col_pos_names = [ticker + ' Pos' for ticker in pair_[0:2]]
     norm_pair_df[col_pos_names[0]] = np.sign(norm_pair_df['diff']) * -1 * norm_pair_df['trade_open']
     norm_pair_df[col_pos_names[1]] = np.sign(norm_pair_df['diff']) * norm_pair_df['trade_open']
@@ -201,15 +203,51 @@ def get_df_tot_positions(df_,
     return tot_pos_df
 pass
 
-# Global Variable
+# Global Variables
 DIR_PATH = '/Users/francescoferrari/Desktop/'
 EXT = '.csv'
 NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
 # Reading data
 close_df = read_df_from_db('PX_LAST')
+
+#-------------------------------------------------------------------------------
 totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
-# Testing function `get_df_tot_positions`
-trad_date_from = dt.date(2011, 2, 1)
-trad_date_to = get_x_trading_day(trad_date_from, 126)
+est_per_trad_days = 252
+trad_per_trad_days = 126
 no_pairs = 50
-get_df_tot_positions(totret_df, trad_date_from, trad_date_to, 252, no_pairs)
+trad_date_from = dt.date(2011, 2, 1)
+trad_date_to = dt.date(2018, 2, 1)
+
+trad_periods = get_trad_schedule(totret_df,
+                                 trad_date_from,
+                                 trad_date_to,
+                                 est_per_trad_days,
+                                 trad_per_trad_days)
+trad_period_positions = get_df_tot_positions(totret_df,
+                                             trad_periods[0][0],
+                                             trad_periods[0][1],
+                                             est_per_trad_days,
+                                             no_pairs)
+for trad_period in trad_periods[1:]:
+    sub_period_positions = get_df_tot_positions(totret_df,
+                                                trad_periods[0][0],
+                                                trad_periods[0][1],
+                                                est_per_trad_days,
+                                                no_pairs)
+    
+    
+    
+    
+    
+    
+    
+    
+    print('fuck')
+
+
+
+
+
+
+
+
