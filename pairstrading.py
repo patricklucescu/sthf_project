@@ -157,10 +157,10 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
     norm_pair_df['RF Pos'] = np.ones(norm_pair_df.shape[0]) - np.abs(norm_pair_df[col_pos_names[0]])
     
     # Plot for analysis
-    plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[0]]/100)
-    plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]]/100)
-    plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[0]])
-    plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[1]])
+    #plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[0]]/100)
+    #plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]]/100)
+    #plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[0]])
+    #plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[1]])
     return norm_pair_df[['Dates', col_pos_names[0], col_pos_names[1], 'RF Pos']]
 pass
 
@@ -209,8 +209,44 @@ def get_df_tot_positions(df_,
     return tot_pos_df
 pass
 
+def simulate_trading(totret_df_,
+                     trad_date_from_,
+                     trad_date_to_,
+                     est_per_trad_days_,
+                     trad_per_trad_days_,
+                     no_pairs_):
+    trad_periods = get_trad_schedule(totret_df_,
+                                     trad_date_from_,
+                                     trad_date_to_,
+                                     est_per_trad_days_,
+                                     trad_per_trad_days_)
+    trad_period_positions = get_df_tot_positions(totret_df_,
+                                                 trad_periods[0][0],
+                                                 trad_periods[0][1],
+                                                 est_per_trad_days_,
+                                                 no_pairs_)
+    for trad_period in trad_periods[1:]:
+        sub_period_positions = get_df_tot_positions(totret_df_,
+                                                    trad_period[0],
+                                                    trad_period[1],
+                                                    est_per_trad_days_,
+                                                    no_pairs_)
+        trad_period_positions = trad_period_positions.append(sub_period_positions[1:])
+    trad_period_positions = trad_period_positions.fillna(value=0)
+    return trad_period_positions
+pass
+
+def get_log_returns(prices_df_):
+    log_returns = prices_df_.copy()
+    log_returns.iloc[:,1:] = np.log(prices_df_.iloc[:, 1:].shift(1)) - np.log(prices_df_.iloc[:, 1:])
+    return log_returns.fillna(value=0)
+pass
+
+
+
 # Global Variables
-DIR_PATH = '/Users/francescoferrari/Dropbox (Personal)/HF/Data/'
+#DIR_PATH = '/Users/francescoferrari/Dropbox (Personal)/HF/Data/'
+DIR_PATH = "/Users/Santiago/Dropbox/1_Studium/1_MQF/1_Semester/5 - Strategies at Hedge Funds/2 - Project/SharedProject Folder/Data/"
 EXT = '.csv'
 NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
 # Reading data
@@ -218,33 +254,34 @@ close_df = read_df_from_db('PX_LAST')
 
 #-------------------------------------------------------------------------------
 totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
-est_per_trad_days = 252
-trad_per_trad_days = 126
-no_pairs = 50
-trad_date_from = dt.date(2017, 2, 1)
+est_per_trad_days = 126 #252
+trad_per_trad_days = 21 #126
+no_pairs = 10
+trad_date_from = dt.date(2011, 2, 1)
 trad_date_to = dt.date(2018, 2, 1)
-
-trad_periods = get_trad_schedule(totret_df,
-                                 trad_date_from,
-                                 trad_date_to,
-                                 est_per_trad_days,
-                                 trad_per_trad_days)
-trad_period_positions = get_df_tot_positions(totret_df,
-                                             trad_periods[0][0],
-                                             trad_periods[0][1],
-                                             est_per_trad_days,
-                                             no_pairs)
-for trad_period in trad_periods[1:]:
-    sub_period_positions = get_df_tot_positions(totret_df,
-                                                trad_period[0],
-                                                trad_period[1],
-                                                est_per_trad_days,
-                                                no_pairs)
-    trad_period_positions = trad_period_positions.append(sub_period_positions[1:])
-trad_period_positions = trad_period_positions.fillna(value=0)
+positions_df = simulate_trading(totret_df,
+                     trad_date_from,
+                     trad_date_to,
+                     est_per_trad_days,
+                     trad_per_trad_days,
+                     no_pairs)
 
 
-print('fuck')
+dates = positions_df["Dates"]
+positions_df = positions_df.drop(["RF Pos", "Dates"], 1)
+ticker_list = [ticker[:-4] for ticker in positions_df.columns]
+positions_df.columns = ticker_list
+positions_df /= no_pairs # define correct weights
+positions_df = pd.concat([dates, positions_df], axis = 1)
+
+
+prices = get_df_from_to(totret_df, trad_date_from, trad_date_to, tickers_list_= ticker_list)
+log_returns = get_log_returns(prices)
+ordinary_returns = np.exp(log_returns.iloc[:,1:]) - 1
+
+weighted_log_returns_cum_sum = np.cumsum(np.log(np.sum(ordinary_returns * positions_df.iloc[:,1:], axis = 1) + 1))
+weigthed_ordinary_returns_cum_sum = np.exp(weighted_log_returns_cum_sum)
+plt.plot(prices['Dates'], weigthed_ordinary_returns_cum_sum)
 
 
 
