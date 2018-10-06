@@ -106,15 +106,15 @@ def get_trad_schedule(df_,
     date = trad_date_from_
     trad_dates = [tuple((date,
                          get_x_trading_day(date, trad_per_days_)))]
-    while date <= trad_date_to_:
+    while date < trad_date_to_:
         trad_date_start = get_x_trading_day(date, trad_per_days_)
         date = trad_dates[-1][1]
-        if get_x_trading_day(date, trad_per_days_) >= end_date_data:
+        if get_x_trading_day(date, trad_per_days_) >= trad_date_to_:
             trad_date_end = trad_date_to_
         else:
             trad_date_end = get_x_trading_day(date, trad_per_days_)
         trad_dates.append(tuple((trad_date_start, trad_date_end)))
-    return trad_dates
+    return trad_dates[:-1]
 pass
 
 def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
@@ -134,6 +134,9 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
 #     date_from_ = get_x_trading_day(dt.date(2010, 1, 4), 252 + 1)
 #     date_to_ = get_x_trading_day(date_from_, 126)
 #     pair_ = ('ED US Equity', 'XEL US Equity', 1.348713804343775)
+    debug_msg = 'Getting positions for pair {} and {}'.format(pair_[0],
+                                                              pair_[1])
+    print(debug_msg)
     pair_df = get_df_from_to(df_, date_from_, date_to_,
                              tickers_list_ = list(pair_[0:2]))
     norm_pair_df = get_normalized_df(pair_df)
@@ -158,7 +161,6 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]]/100)
     plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[0]])
     plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[1]])
-    print('next')
     return norm_pair_df[['Dates', col_pos_names[0], col_pos_names[1], 'RF Pos']]
 pass
 
@@ -186,10 +188,14 @@ def get_df_tot_positions(df_,
     est_date_from = get_x_trading_day(trad_date_from_,
                                       -(est_per_trad_days_+1))
     est_date_to = get_x_trading_day(trad_date_from_, -1)
+    debug_msg = 'Estimating from {} to {}'.format(est_date_from, est_date_to)
+    print(debug_msg)
     pairs_selected = get_selected_pairs(df_, 
                                         est_date_from, 
                                         est_date_to, 
                                         no_pairs_)
+    debug_msg = 'Trading from {} to {}'.format(trad_date_from_, trad_date_to_)
+    print(debug_msg)
     tot_pos_df = get_postions_pair(df_,
                                    trad_date_from_,
                                    trad_date_to_,
@@ -204,7 +210,7 @@ def get_df_tot_positions(df_,
 pass
 
 # Global Variables
-DIR_PATH = '/Users/francescoferrari/Desktop/'
+DIR_PATH = '/Users/francescoferrari/Dropbox (Personal)/HF/Data/'
 EXT = '.csv'
 NYSE_HOLIDAYS = get_nyse_holidays(2010, 2018)
 # Reading data
@@ -215,7 +221,7 @@ totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
 est_per_trad_days = 252
 trad_per_trad_days = 126
 no_pairs = 50
-trad_date_from = dt.date(2011, 2, 1)
+trad_date_from = dt.date(2017, 2, 1)
 trad_date_to = dt.date(2018, 2, 1)
 
 trad_periods = get_trad_schedule(totret_df,
@@ -230,19 +236,15 @@ trad_period_positions = get_df_tot_positions(totret_df,
                                              no_pairs)
 for trad_period in trad_periods[1:]:
     sub_period_positions = get_df_tot_positions(totret_df,
-                                                trad_periods[0][0],
-                                                trad_periods[0][1],
+                                                trad_period[0],
+                                                trad_period[1],
                                                 est_per_trad_days,
                                                 no_pairs)
-    
-    
-    
-    
-    
-    
-    
-    
-    print('fuck')
+    trad_period_positions = trad_period_positions.append(sub_period_positions[1:])
+trad_period_positions = trad_period_positions.fillna(value=0)
+
+
+print('fuck')
 
 
 
