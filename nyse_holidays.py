@@ -1,5 +1,6 @@
 '''
-Created on 29 Sep 2018
+Created       on 29 Sep 2018
+Last modified on 15 Oct 2018
 
 @author: S.Walliser, P.Lucescu, F.Ferrari
 '''
@@ -9,6 +10,13 @@ import datetime
 from dateutil import rrule 
 
 def get_nyse_holidays(year_start_, year_end_):
+    '''Returns list of NYSE holidays between and included two specific years
+    
+    :param year_start_: integer representing the starting year
+    :param year_end_: integer representing the ending year
+    
+    :return : list of datetime.date containing NYSE holidays
+    '''
     a = datetime.date(year_start_, 1, 1)
     b = datetime.date(year_end_, 12, 31)
     rs = rrule.rruleset()
