@@ -213,6 +213,17 @@ def get_trad_schedule(df_,
 pass
 
 def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
+    '''Function which returns a list of triples containing the tickers and the
+    distance measure for a specified number of pairs (`no_pairs_`)
+    
+    :param df_: [pandas.DataFrame] with data
+    :param date_from_: [datetime.date] first day of formation (trading date)
+    :param date_to_: [datetime.date] last day of formation (trading date)
+    :param no_pairs_: [integer] number of pairs
+    
+    :return pairs_selected: [list of triples] with pairs tickers and historical
+        standard deviation during the formation period
+    '''
 #     date_from_ = dt.date(2010, 1, 4)
 #     date_to_ = get_x_trading_day(date_from_, 252)
 #     no_pairs_ = 2
@@ -226,6 +237,18 @@ def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
 pass
 
 def get_postions_pair(df_, date_from_, date_to_, pair_):
+    '''Function that returns the positions for the two stocks in the pair over 
+    the desired trading period
+    
+    :param df_: [pandas.DataFrame] with data
+    :param date_from_: [datetime.date] first day of trading (trading date)
+    :param date_to_: [datetime.date] last day of trading (trading date)
+    :param pair_: [triple] including the two stocks forming the pair and the
+        historical standard deviation of the spread between the two normalized
+        stock time series
+        
+    :return : [pandas.DataFrame] with positions
+    '''
 #     date_from_ = get_x_trading_day(dt.date(2010, 1, 4), 252 + 1)
 #     date_to_ = get_x_trading_day(date_from_, 126)
 #     pair_ = ('ED US Equity', 'XEL US Equity', 1.348713804343775)
@@ -249,7 +272,6 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
     col_pos_names = [ticker + ' Pos' for ticker in pair_[0:2]]
     norm_pair_df[col_pos_names[0]] = np.sign(norm_pair_df['diff']) * -1 * norm_pair_df['trade_open']
     norm_pair_df[col_pos_names[1]] = np.sign(norm_pair_df['diff']) * norm_pair_df['trade_open']
-    norm_pair_df['RF Pos'] = np.ones(norm_pair_df.shape[0]) - np.abs(norm_pair_df[col_pos_names[0]])
     
     # Plot for analysis
     plt.figure()
@@ -257,10 +279,20 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]]/100)
     plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[0]])
     plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[1]])
-    return norm_pair_df[['Dates', col_pos_names[0], col_pos_names[1], 'RF Pos']]
+    return norm_pair_df[['Dates', col_pos_names[0], col_pos_names[1]]]
 pass
 
 def merge_positions_df(tot_pos_df_, pair_pos_df_):
+    '''Function that merges two dataframes containing the positions on the
+    different stocks 
+    
+    :param tot_pos_df_: [pandas.DataFrame] larger dataframe containing the 
+        postions on the stocks
+    :param pair_pos_df_: [pandas.DataFrame] smaller dataframe with the positions
+        on the stocks for the subsequent period
+    
+    return tot_pos_df: [pandas.DataFrame] merged dataframe
+    '''
     tot_pos_df = tot_pos_df_.copy()
     col_tot_pos_df = tot_pos_df.columns.values[1:]
     col_pair_pos_df = pair_pos_df_.columns.values[1:]
@@ -277,6 +309,16 @@ def get_df_tot_positions(df_,
                          trad_date_to_,
                          est_per_trad_days_,
                          no_pairs_):
+    '''Functions which returns a dataframe with 
+    
+    :param df_: [pandas.DataFrame] with entire dataset
+    :param trad_date_from_: [datetime.date] first day of trading (trading date)
+    :param trad_date_to_: [datetime.date] last day of trading (trading date)
+    :param est_per_trad_days_: [integer] formation period length in trading days
+    :param no_pairs_: [integer] number of pairs to trade on
+    
+    :return tot_pos_df: [pandas.DataFrame] containg all the positions 
+    '''
 #     trad_date_from_ = dt.date(2011, 2, 1)
 #     trad_date_to_ = get_x_trading_day(trad_date_from_, 126)
 #     est_per_trad_days_ = 252
@@ -311,6 +353,15 @@ def simulate_trading(totret_df_,
                      est_per_trad_days_,
                      trad_per_trad_days_,
                      no_pairs_):
+    '''
+    
+    :param totret_df_:
+    :param trad_date_from_:
+    :param trad_date_to_:
+    :param est_per_trad_days_:
+    :param trad_per_trad_days_:
+    :param no_pairs_:
+    '''
     trad_periods = get_trad_schedule(totret_df_,
                                      trad_date_from_,
                                      trad_date_to_,
@@ -333,6 +384,13 @@ def simulate_trading(totret_df_,
 pass
 
 def get_log_returns(prices_df_):
+    '''Function which returns a dataframe with log returns for a given prices
+    dataframe
+    
+    :param prices_df_: [pandas.DataFrame] with prices
+    
+    :return log_returns: [pandas.DataFrame] with log returns
+    '''
     log_returns = prices_df_.copy()
     log_returns.iloc[:,1:] = np.log(prices_df_.iloc[:, 1:].shift(1)) - np.log(prices_df_.iloc[:, 1:])
     return log_returns.fillna(value=0)
