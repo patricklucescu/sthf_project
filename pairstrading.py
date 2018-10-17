@@ -552,7 +552,6 @@ if __name__ == '__main__':
                axis = 1)+1))
     # converto to simple return
     weigthed_ordinary_returns_cum_sum = np.exp(weighted_log_returns_cum_sum)
-    print(weigthed_ordinary_returns_cum_sum)
     # plot
     plt.figure()
     plt.plot(prices['Dates'], weigthed_ordinary_returns_cum_sum)
