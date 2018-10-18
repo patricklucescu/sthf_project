@@ -11,8 +11,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from dateutil import rrule 
 from itertools import combinations
-from nyse_holidays import get_nyse_holidays
 
 def read_df_from_db(field_):
     '''Reads the csv file from the disk and returns a pandas dataframe, the
@@ -39,6 +39,73 @@ def read_industry_info():
     # read csv file
     sector_df = pd.read_csv(DIR_PATH + 'SECTOR' + EXT)
     return sector_df
+pass
+
+def get_nyse_holidays(year_start_, year_end_):
+    '''Returns list of NYSE holidays between and included two specific years,
+    source `https://gist.github.com/jckantor/d100a028027c5a6b8340`
+    
+    :param year_start_: integer representing the starting year
+    :param year_end_: integer representing the ending year
+    
+    :return : list of datetime.date containing NYSE holidays
+    '''
+    a = dt.date(year_start_, 1, 1)
+    b = dt.date(year_end_, 12, 31)
+    rs = rrule.rruleset()
+    
+    # New Years Day
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b,
+                         bymonth=12, bymonthday=31, byweekday=rrule.FR))
+    # New Years Day   
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b,
+                         bymonth= 1, bymonthday= 1))      
+    # New Years Day               
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b,
+                         bymonth= 1, bymonthday= 2, byweekday=rrule.MO))
+    # Martin Luther King Day  
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b,
+                         bymonth= 1, byweekday= rrule.MO(3)))
+    # Washington's Birthday              
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth= 2, byweekday= rrule.MO(3)))
+    # Good Friday      
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         byeaster= -2))
+    # Memorial Day
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth= 5, byweekday= rrule.MO(-1)))
+    # Independence Day
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth= 7, bymonthday= 3, byweekday=rrule.FR))
+    # Independence Day
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth= 7, bymonthday= 4))
+    # Independence Day
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth= 7, bymonthday= 5, byweekday=rrule.MO))
+    # Labor Day
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth= 9, byweekday= rrule.MO(1)))
+    # Thanksgiving Day
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth=11, byweekday= rrule.TH(4)))
+    # Christmas 
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b, 
+                         bymonth=12, bymonthday=24, byweekday=rrule.FR))
+    # Christmas 
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b,
+                         bymonth=12, bymonthday=25))              
+    # Christmas  
+    rs.rrule(rrule.rrule(rrule.YEARLY, dtstart=a, until=b,
+                         bymonth=12, bymonthday=26, byweekday=rrule.MO))
+    
+    # Exclude potential holidays that fall on weekends
+    rs.exrule(rrule.rrule(rrule.WEEKLY,
+                          dtstart=a,
+                          until=b,
+                          byweekday=(rrule.SA,rrule.SU)))
+    return list(rs)
 pass
 
 def get_industry_groups():
@@ -97,6 +164,22 @@ def get_log_returns(prices_df_):
     return log_returns.fillna(value=0)
 pass
 
+def get_simple_returns(prices_df_):
+    '''Function which returns a dataframe with simple returns for a given prices
+    dataframe
+    
+    :param prices_df_: [pandas.DataFrame] with prices
+    
+    :return log_returns: [pandas.DataFrame] with simple returns
+    '''
+    # copy prices dataframe
+    log_returns = prices_df_.copy()
+    # calculate simple returns
+    log_returns.iloc[:,1:] = \
+        prices_df_.iloc[:, 1:]/prices_df_.iloc[:, 1:].shift(1) -1 
+    return log_returns.fillna(value=0)
+pass
+
 def get_df_from_to(df_, date_from_, date_to_,
                    ind_sec_ = None,
                    tickers_list_ = None):
@@ -144,7 +227,7 @@ def get_normalized_df(df_):
     # copy input dataframe
     norm_df = df_.copy()
     # normalize dataframe to first day in the period
-    norm_df.iloc[:,1:] = norm_df.iloc[:,1:]/norm_df.iloc[0,1:]*100
+    norm_df.iloc[:,1:] = norm_df.iloc[:,1:]/norm_df.iloc[0,1:]*1
     return norm_df
 pass
     
@@ -163,7 +246,7 @@ def get_x_trading_day(date_, trad_days_):
     return output_date.astype(dt.date)
 pass
 
-def get_pairs_ind_sec(df_, date_from_, date_to_, ind_sec_):
+def get_pairs_ind_sec(df_, date_from_, date_to_, ind_sec_ = None):
     '''Forming all the possible pairs within one specific sector and between
     two specific dates
     
@@ -179,7 +262,10 @@ def get_pairs_ind_sec(df_, date_from_, date_to_, ind_sec_):
 #     date_to_ = dt.date(2010, 1, 15)
 #     ind_gr_sec_ = "Electronics"
     # getting the dataframe from `date_from_` to `date_to_`
-    sel_df = get_df_from_to(df_, date_from_, date_to_, ind_sec_)
+    if ind_sec_ is not None:
+        sel_df = get_df_from_to(df_, date_from_, date_to_, ind_sec_)
+    else:
+        sel_df = get_df_from_to(df_, date_from_, date_to_)
     # normalize selected dataframe
     norm_df = get_normalized_df(sel_df)
     # define all possible combination in a list of tuples
@@ -195,6 +281,7 @@ pass
 def get_trad_schedule(df_,
                       trad_date_from_,
                       trad_date_to_,
+#                       freq_trad_days_,
                       est_per_days_,
                       trad_per_days_):
     '''Function which creates the trading schedule depending on the length of
@@ -231,6 +318,7 @@ def get_trad_schedule(df_,
     while trad_dates[-1][1] < trad_date_to_:
         # define next period start date
         trad_date_start = trad_dates[-1][1]
+#         trad_date_start = get_x_trading_day(trad_dates[-1][0], freq_trad_days_)
         # define next period end date
         if get_x_trading_day(trad_date_start, trad_per_days_) >= trad_date_to_:
             trad_date_end = trad_date_to_
@@ -241,7 +329,11 @@ def get_trad_schedule(df_,
     return trad_dates
 pass
 
-def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
+def get_selected_pairs(df_,
+                       date_from_,
+                       date_to_,
+                       no_pairs_,
+                       restricted_ = True):
     '''Function which returns a list of triples containing the tickers and the
     distance measure for a specified number of pairs (`no_pairs_`)
     
@@ -249,6 +341,7 @@ def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
     :param date_from_: [datetime.date] first day of formation (trading date)
     :param date_to_: [datetime.date] last day of formation (trading date)
     :param no_pairs_: [integer] number of pairs
+    :param restricted_: [boolean] true for restricted pairs 
     
     :return pairs_selected: [list of triples] with pairs tickers and historical
         standard deviation during the formation period
@@ -256,14 +349,17 @@ def get_selected_pairs(df_, date_from_, date_to_, no_pairs_):
 #     date_from_ = dt.date(2010, 1, 4)
 #     date_to_ = get_x_trading_day(date_from_, 252)
 #     no_pairs_ = 2
-    # get all sectors
-    sectors = get_industry_sector()
-    # define empty list
-    pairs_list = []
-    # iterate over sectors
-    for sector in sectors:
-        # append to list of pairs new pairs
-        pairs_list += get_pairs_ind_sec(df_, date_from_, date_to_, sector)
+    if restricted_:
+        # define empty list
+        pairs_list = []
+        # get all sectors
+        sectors = get_industry_sector()
+        # iterate over sectors
+        for sector in sectors:
+            # append to list of pairs new pairs
+            pairs_list += get_pairs_ind_sec(df_, date_from_, date_to_, sector)
+    else:
+        pairs_list = get_pairs_ind_sec(df_, date_from_, date_to_)
     # sort pairs lower std first
     pairs_list_sorted = sorted(pairs_list, key = lambda x: x[2])
     # select desired number of pairs only
@@ -330,11 +426,22 @@ def get_postions_pair(df_, date_from_, date_to_, pair_):
         norm_pair_df['trade_open']
     
     # plot for analysis, can be commented
-#     plt.figure()
-#     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[0]]/100)
-#     plt.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]]/100)
-#     plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[0]])
-#     plt.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[1]])
+#     fig, ax1 = plt.subplots()
+#     ax1.set_xlabel('Dates')
+#     ax1.grid(True)
+#     ax1.set_ylabel('Price')
+#     ax1.plot(norm_pair_df['Dates'], norm_pair_df[pair_[0]], label=pair_[0])
+#     ax1.plot(norm_pair_df['Dates'], norm_pair_df[pair_[1]], label=pair_[1])
+#     ax1.legend()
+#     ax2 = ax1.twinx()
+#     ax2.set_ylabel('Positions')
+#     ax2.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[0]],
+#              color = 'tab:green', label=col_pos_names[0])
+#     ax2.plot(norm_pair_df['Dates'], norm_pair_df[col_pos_names[1]],
+#              color = 'tab:red', label=col_pos_names[1])
+#     ax2.legend()
+#     plt.yticks(np.arange(-1, 1.2, 1.0))
+#     fig.tight_layout()
     return norm_pair_df[['Dates', col_pos_names[0], col_pos_names[1]]]
 pass
 
@@ -422,7 +529,23 @@ def get_df_tot_positions(df_,
     return tot_pos_df
 pass
 
-def simulate_trading(totret_df_,
+def get_period_ret(df_, trad_period_pos_, date_start_, date_end_, no_pairs_):
+    # define dataframe without dates
+    positions_wd_df = trad_period_pos_.drop(["Dates"], 1)
+    # define ticker list in scope of trading
+    ticker_list = [ticker[:-4] for ticker in positions_wd_df.columns]
+    prices_df = get_df_from_to(df_,
+                               date_start_,
+                               date_end_,
+                               tickers_list_=ticker_list)
+    ret_df = get_simple_returns(prices_df)
+    w_ret_df = np.sum(np.multiply(ret_df.iloc[:,1:],
+                                  trad_period_pos_.iloc[:,1:])/no_pairs_,
+                                  axis=1)
+    return w_ret_df
+pass
+
+def simulate_trading(df_,
                      trad_date_from_,
                      trad_date_to_,
                      est_per_trad_days_,
@@ -431,7 +554,7 @@ def simulate_trading(totret_df_,
     '''Function that returns the positions in the single stocks for each trading
     day in the trading period
     
-    :param totret_df_: [pandas.DataFrame] with the total return index data
+    :param df_: [pandas.DataFrame] with data
     :param trad_date_from_: [datetime.date] first day of trading (trading date)
     :param trad_date_to_:[datetime.date] last day of trading (trading date)
     :param est_per_days_: [integer] formation period length in trading days
@@ -442,32 +565,44 @@ def simulate_trading(totret_df_,
         single stocks for each trading day in the trading period
     '''
     # define trading schedule
-    trad_periods = get_trad_schedule(totret_df_,
+    trad_periods = get_trad_schedule(df_,
                                      trad_date_from_,
                                      trad_date_to_,
+#                                      21,
                                      est_per_trad_days_,
                                      trad_per_trad_days_)
     # get first trading sub-period positions
-    trad_period_pos = get_df_tot_positions(totret_df_,
-                                                 trad_periods[0][0],
-                                                 trad_periods[0][1],
-                                                 est_per_trad_days_,
-                                                 no_pairs_)
+    trad_period_pos = get_df_tot_positions(df_,
+                                           trad_periods[0][0],
+                                           trad_periods[0][1],
+                                           est_per_trad_days_,
+                                           no_pairs_)
+    # get first trading sub-period returns
+    trad_period_ret = get_period_ret(df_,
+                                     trad_period_pos,
+                                     trad_periods[0][0],
+                                     trad_periods[0][1],
+                                     no_pairs_)
     # iterate over all remaining trading sub-periods
     for trad_period in trad_periods[1:]:
         # get sub period positions
-        sub_period_pos = get_df_tot_positions(totret_df_,
+        sub_period_pos = get_df_tot_positions(df_,
                                               trad_period[0],
                                               trad_period[1],
                                               est_per_trad_days_,
                                               no_pairs_)
+        sub_period_ret = get_period_ret(df_,
+                                        sub_period_pos,
+                                        trad_period[0],
+                                        trad_period[1],
+                                        no_pairs_)
         # append the `sub_period_pos` to `trad_period_pos` (we skip first row 
         # since no position is open on the first day of the new period)
+        trad_period_ret = trad_period_ret.append(sub_period_ret[1:])
         trad_period_pos = trad_period_pos.append(sub_period_pos[1:])
-    # fill NaN values with zeros
-    trad_period_pos = trad_period_pos.fillna(value=0)
+    dates = trad_period_pos['Dates']
     print('Done')
-    return trad_period_pos
+    return dates, trad_period_ret
 pass
 
 #-------------------------------------------------------------------------------
@@ -505,10 +640,9 @@ if __name__ == '__main__':
     DIR_PATH = ''
     EXT = '.csv'
     
-    # deading data
-    close_df = read_df_from_db('PX_LAST')
+    # reading data
     totret_df = read_df_from_db('TOT_RETURN_INDEX_GROSS_DVDS')
-    # define 
+    # define dates
     trad_date_from = dt.datetime.strptime(args.trad_date_from,'%Y-%m-%d').date()
     trad_date_to = dt.datetime.strptime(args.trad_date_to,'%Y-%m-%d').date()
 #     est_per_trad_days = 252
@@ -516,42 +650,22 @@ if __name__ == '__main__':
 #     no_pairs = 20
 #     trad_date_from = dt.date(2011, 2, 1)
 #     trad_date_to = dt.date(2014, 1, 31)
-    # get postions dataframe
-    positions_df = simulate_trading(totret_df,
-                                    trad_date_from,
-                                    trad_date_to,
-                                    args.est_per_trad_days,
-                                    args.trad_per_trad_days,
-                                    args.no_pairs)
-    # define dates
-    dates = positions_df["Dates"]
-    # define dataframe without dates
-    positions_wd_df = positions_df.drop(["Dates"], 1)
-    # define ticker list in scope of trading
-    ticker_list = [ticker[:-4] for ticker in positions_wd_df.columns]
-    # redefine column names
-    positions_wd_df.columns = ticker_list
-    # define open positions each day
-    open_pos = np.array(np.sum(np.abs(positions_wd_df), axis=1))
-    open_pos[open_pos == 0] = 1
-    open_pos_mat = np.transpose(np.tile(open_pos, (positions_wd_df.shape[1],1)))
-    # define weight for each day
-    positions_wd_df = positions_wd_df/open_pos_mat
-    new_positions_df = pd.concat([dates, positions_wd_df], axis = 1)
-     
-    # get prices for the period and ticker list
-    prices = get_df_from_to(totret_df, trad_date_from, trad_date_to,
-                            tickers_list_= ticker_list)
-    # calculate log returns
-    log_returns = get_log_returns(prices)
-    # convert them to simple returns
-    ordinary_returns = np.exp(log_returns.iloc[:,1:]) - 1
+    # get simple returns dataframe and dates
+    dates, returns_df = simulate_trading(totret_df,
+                                         trad_date_from,
+                                         trad_date_to,
+                                         args.est_per_trad_days,
+                                         args.trad_per_trad_days,
+                                         args.no_pairs)
+    # convert returns to log returns
+    log_returns_df = np.log(returns_df + 1)
     # sum up returns and calculate cumulative sum of log returns
-    weighted_log_returns_cum_sum = np.cumsum(np.log(
-        np.sum(ordinary_returns * new_positions_df,
-               axis = 1)+1))
+    cum_log_returns_df = np.cumsum(log_returns_df)
     # converto to simple return
-    weigthed_ordinary_returns_cum_sum = np.exp(weighted_log_returns_cum_sum)
+    cum_returns_df = np.exp(cum_log_returns_df)
     # plot
-    plt.plot(prices['Dates'], weigthed_ordinary_returns_cum_sum)
+    plt.plot(dates, cum_returns_df, label='Growth of 1$')
+    plt.legend()
+    plt.grid(True)
+    plt.xlabel('Date')
 pass
